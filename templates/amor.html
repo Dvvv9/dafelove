@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Te amo ❤️</title>
+  <style>
+    body {
+      background-color: #212121;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .foto-container {
+      width: 250px;
+      height: 250px;
+      overflow: hidden;
+      position: relative;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      margin-bottom: 30px;
+    }
+
+    .foto {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      z-index: 1;
+    }
+
+    .foto.ativa {
+      opacity: 1;
+      z-index: 2;
+    }
+
+    .contador {
+      font-size: 1.5rem;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Música -->
+  <audio autoplay loop style="display: none">
+    <source src="{{ url_for('static', filename='castle.mp3') }}" type="audio/mpeg">
+    Teu navegador não suporta áudio.
+  </audio>
+
+  <!-- Fotos com fade suave -->
+  <div class="foto-container" id="foto-slider">
+    <img class="foto ativa" src="{{ url_for('static', filename=fotos[0]) }}" />
+    <img class="foto" src="" />
+  </div>
+
+  <!-- Frase e contador -->
+  <div>
+    <h2>Eu te amo há:</h2>
+    <p id="contador" class="contador"></p>
+  </div>
+
+  <script>
+    // Contador de tempo
+    const inicio = new Date('2025-05-27T19:45:00');
+    const elemento = document.getElementById('contador');
+
+    function atualizarContador() {
+      const agora = new Date();
+      let diff = agora - inicio;
+
+      const anos = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+      diff -= anos * 1000 * 60 * 60 * 24 * 365.25;
+
+      const meses = Math.floor(diff / (1000 * 60 * 60 * 24 * 30.44));
+      diff -= meses * 1000 * 60 * 60 * 24 * 30.44;
+
+      const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+      diff -= dias * 1000 * 60 * 60 * 24;
+
+      const horas = Math.floor(diff / (1000 * 60 * 60));
+      diff -= horas * 1000 * 60 * 60;
+
+      const minutos = Math.floor(diff / (1000 * 60));
+      diff -= minutos * 1000 * 60;
+
+      const segundos = Math.floor(diff / 1000);
+
+      elemento.textContent =
+        `${anos}a, ${meses}m, ${dias}d, ${horas}h ${minutos}min ${segundos}s`;
+    }
+
+    setInterval(atualizarContador, 1000);
+    atualizarContador();
+
+    // Lista de fotos vinda do Flask
+    const fotos = {{ fotos | tojson }};
+
+    let atual = 0;
+    let visivel = 0;
+    const container = document.getElementById('foto-slider');
+    const imagens = container.getElementsByClassName('foto');
+
+    function trocarFoto() {
+      const proxima = (atual + 1) % fotos.length;
+      const oculto = (visivel + 1) % 2;
+
+      imagens[oculto].src = `/static/${fotos[proxima]}`;
+      imagens[oculto].onload = () => {
+        imagens[visivel].classList.remove('ativa');
+        imagens[oculto].classList.add('ativa');
+        atual = proxima;
+        visivel = oculto;
+      };
+    }
+
+    setInterval(trocarFoto, 4000);
+  </script>
+
+</body>
+</html>
