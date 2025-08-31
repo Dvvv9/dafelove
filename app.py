@@ -17,7 +17,9 @@ def amor():
         'foto3.jpg',
         'foto4.jpg',
         'foto5.jpg',
-        'foto6.jpg'
+        'foto6.jpg',
+        'foto7.jpg',
+        'foto8.jpg'
     ]
     return render_template("amor.html", fotos=fotos)
 
