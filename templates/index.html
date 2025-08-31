@@ -2,284 +2,377 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Voo com Amor</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
-
+    :root { --astro-size: 100px; --plane-size: 180px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
     body {
-      background-color: #212121;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      font-family: sans-serif;
+      min-height: 100vh; font-family: sans-serif;
+      display: flex; justify-content: center; align-items: center; position: relative;
     }
 
-    .ceu {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 400vw;
-      height: 100vh;
-      background: url("{{ url_for('static', filename='ceu.png') }}") repeat-x;
-      background-size: cover;
-      animation: moverCeu 60s linear infinite;
-      z-index: 0;
+    /* ===== Top-left HUD ===== */
+    .hud{
+      position: absolute; top: 16px; left: 16px; z-index: 10000;
+      display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+    }
+    .topbar{ display: flex; align-items: center; gap: 8px; }
+
+    /* Selo 🫵❤️U + tempo */
+    .marca-amor{
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,0,0,0.55); color: #fff; padding: 8px 10px; border-radius: 10px;
+      backdrop-filter: blur(4px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); font-weight: 600;
+    }
+    .marca-amor .emoji{ font-size: 16px; }
+    .marca-amor .tempo{ font-size: 13px; opacity: 0.95; }
+
+    /* Botão Ver fotos */
+    .btn-fotos{
+      padding: 8px 10px; border: none; border-radius: 10px; cursor: pointer;
+      background: rgba(0,0,0,0.55); color: #fff; backdrop-filter: blur(4px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25); font-size: 13px;
+    }
+    .btn-fotos:hover{ background: rgba(0,0,0,0.65); }
+
+    /* Painel Hora */
+    .painel-tempo{
+      background: rgba(0,0,0,0.55); color: #fff; padding: 10px 12px; border-radius: 10px;
+      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(4px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25); font-size: 14px; line-height: 1;
+    }
+    .painel-tempo input[type="text"]{
+      width: 92px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; outline: none;
+    }
+    .painel-tempo button{
+      padding: 6px 10px; border: none; border-radius: 8px; cursor: pointer;
+      background: rgba(255,255,255,0.15); color: #fff;
+    }
+    .painel-tempo button:hover{ background: rgba(255,255,255,0.25); }
+
+    /* Badge de áudio */
+    .audio-badge{
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,0,0,0.55); color: #fff; padding: 8px 10px; border-radius: 10px;
+      backdrop-filter: blur(4px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); font-size: 13px;
+      user-select: none;
+    }
+    .audio-badge button{
+      padding: 6px 10px; border: none; border-radius: 8px; cursor: pointer;
+      background: rgba(255,255,255,0.15); color: #fff;
+    }
+    .audio-badge button:hover{ background: rgba(255,255,255,0.25); }
+
+    /* ===== Modal de fotos ===== */
+    .modal{
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: none; align-items: center; justify-content: center;
+      z-index: 11000;
+    }
+    .modal.ativo{ display: flex; }
+    .modal-card{
+      background: #0b1220; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      padding: 12px; position: relative; color: #fff;
+      display: flex; flex-direction: column; align-items: stretch;
+      gap: 8px;
+    }
+    .modal-fechar{
+      position: absolute; top: 8px; right: 8px; z-index: 20;
+      background: rgba(0,0,0,0.75); color: #fff; border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 8px; padding: 6px 10px; cursor: pointer; font-weight: 700;
     }
 
-    .sol {
-      position: absolute;
-      top: 5vh;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 15vw;
-      max-width: 100px;
-      z-index: 1;
-      opacity: 1;
-      pointer-events: none;
-      animation: brilhar 5s ease-in-out infinite;
-    }
-
-    .parallax {
-      position: absolute;
-      top: 35%;
-      left: 0;
-      width: 200vw;
-      height: 150px;
-      background: url("{{ url_for('static', filename='parallax.png') }}") no-repeat;
-      background-size: contain;
-      animation: moverParallax 60s linear infinite;
-      z-index: 2;
-      opacity: 0.8;
-      pointer-events: none;
-    }
-
-    .aviao {
-      width: 30vw;
-      max-width: 180px;
-      animation: voo 2.5s ease-in-out infinite;
-      display: block;
-      pointer-events: none;
-      z-index: 3;
-      position: relative;
-    }
-
-    @keyframes moverCeu {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    @keyframes moverParallax {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-25%); }
-    }
-
-    @keyframes voo {
-      0%   { transform: translateY(0); }
-      50%  { transform: translateY(-10px); }
-      100% { transform: translateY(0); }
-    }
-
-    @keyframes brilhar {
-      0%, 100% { filter: brightness(1); }
-      50%      { filter: brightness(1.2); }
-    }
-
-    .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.6);
-      opacity: 0;
-      z-index: 4;
-      pointer-events: none;
-      transition: opacity 0.8s ease;
-    }
-
-    .overlay.ativo {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .mensagem {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      text-align: center;
-      z-index: 5;
-      opacity: 0;
-      transition: opacity 1s ease;
-      padding: 0 10px;
-    }
-
-    .mensagem.ativa {
-      opacity: 1;
-    }
-
-    .mensagem h2 {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-    }
-
-    .contador {
-      font-size: 1.2rem;
-    }
-
-    .modo-btn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      z-index: 9999;
-      width: 40px;
-      max-width: 50px;
-      cursor: pointer;
-      pointer-events: auto;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .carrossel {
-      overflow: hidden;
-      width: 80vw;
-      max-width: 300px;
-      height: 200px;
-      margin-top: 20px;
+    /* Carrossel 1x1 */
+    .carrossel{
+      width: min(90vw, 360px);
+      aspect-ratio: 1 / 1;        /* quadrado */
       border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+      overflow: hidden;
+      background: #000;
     }
-
-    .carrossel .faixa {
-      display: flex;
-      width: calc(80vw * 6);
+    .carrossel .faixa{
+      display: flex; width: max-content; height: 100%;
       animation: deslizar 30s linear infinite;
     }
-
-    .carrossel img {
-      width: 80vw;
-      max-width: 300px;
-      height: 200px;
-      object-fit: cover;
+    .carrossel img{
+      width: min(90vw, 360px);
+      height: 100%;               /* mantém 1x1 do container */
+      object-fit: cover;          /* corta para ficar quadrado */
       flex-shrink: 0;
+      display: block;
+    }
+    @keyframes deslizar { 0%{transform:translateX(0);} 100%{transform:translateX(-1500px);} }
+
+    /* ===== Camadas visuais, ancoradas em baixo ===== */
+    .fundo-estrelado{
+      position: absolute; inset: 0;
+      background: url("{{ url_for('static', filename='fundo-estrelado.png') }}") repeat center bottom;
+      background-size: cover; z-index: 0; animation: moverEstrelas 120s linear infinite; display: none;
+    }
+    @keyframes moverEstrelas { from{background-position:0 bottom;} to{background-position:-500px calc(100% - 500px);} }
+
+    .fundo{ position: absolute; inset: 0; background: no-repeat center bottom; background-size: cover; z-index: 1; }
+
+    .astro{
+      position: absolute; left: 50%; transform: translateX(-50%); width: var(--astro-size);
+      z-index: 2; animation: brilhar 5s ease-in-out infinite; pointer-events: none; top: 20px;
     }
 
-    @keyframes deslizar {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-480vw); }
+    .ceu{
+      position: absolute; inset: 0; width: 400vw; height: 100vh;
+      background: repeat-x left bottom; background-size: auto 100%;
+      animation: moverCeu 60s linear infinite; z-index: 3;
     }
 
-    @media (max-width: 768px) {
-      .mensagem h2 {
-        font-size: 1.4rem;
-      }
+    .parallax{
+      position: absolute; left: 0; width: 200vw; height: 150px;
+      background: no-repeat left bottom; background-size: contain;
+      animation: moverParallax 60s linear infinite; z-index: 4; opacity: 0.9; pointer-events: none; top: 35%;
+    }
 
-      .contador {
-        font-size: 1rem;
-      }
+    .aviao{ width: var(--plane-size); animation: voo 2.5s ease-in-out infinite; position: relative; z-index: 5; pointer-events: none; }
+
+    /* Animações principais */
+    @keyframes moverCeu { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
+    @keyframes moverParallax { 0%{transform:translateX(0);} 100%{transform:translateX(-25%);} }
+    @keyframes voo { 0%{transform:translateY(0);} 50%{transform:translateY(-10px);} 100%{transform:translateY(0);} }
+    @keyframes brilhar { 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.2);} }
+
+    /* Landscape */
+    @media (orientation: landscape){
+      .ceu{ width: 300vw; animation-duration: 80s; }
+      .parallax{ top: 45%; width: 180vw; height: clamp(90px, 22vh, 180px); animation-duration: 80s; }
+      :root{ --astro-size: 64px; --plane-size: 120px; }
     }
   </style>
 </head>
 <body>
-  <div class="ceu" id="ceu"></div>
-  <img src="{{ url_for('static', filename='sol.png') }}" alt="Sol" class="sol" id="astro" />
-  <div class="parallax" id="parallax"></div>
-  <img src="{{ url_for('static', filename='aviao.png') }}" alt="Avião voando" class="aviao" />
+  <!-- HUD topo-esquerda -->
+  <div class="hud">
+    <div class="topbar">
+      <div class="marca-amor">
+        <span class="emoji">🫵❤️U</span>
+        <span class="tempo" id="tempoJuntos">calculando...</span>
+      </div>
+      <button class="btn-fotos" id="btnVerFotos" title="Ver fotos">Ver fotos</button>
+    </div>
 
-  <img src="{{ url_for('static', filename='modo-escuro.png') }}" alt="Modo Escuro" class="modo-btn" id="btnModoEscuro" />
-  <img src="{{ url_for('static', filename='modo-claro.png') }}" alt="Modo Claro" class="modo-btn hidden" id="btnModoClaro" />
+    <div class="painel-tempo" aria-live="polite">
+      <span>Hora:</span>
+      <input id="inputHora" type="text" placeholder="HH:MM" aria-label="Hora simulada HH:MM" />
+      <button id="btnAgora" title="Usar o horário atual">Agora</button>
+    </div>
 
-  <div class="overlay" id="overlay"></div>
-  <div class="mensagem" id="mensagem">
-    <h2>Eu te amo há:</h2>
-    <p class="contador" id="contador"></p>
-    <div class="carrossel" id="carrossel">
-      <div class="faixa" id="faixa">
-        <img src="{{ url_for('static', filename='foto1.jpg') }}" />
-        <img src="{{ url_for('static', filename='foto2.jpg') }}" />
-        <img src="{{ url_for('static', filename='foto3.jpg') }}" />
-        <img src="{{ url_for('static', filename='foto4.jpg') }}" />
-        <img src="{{ url_for('static', filename='foto5.jpg') }}" />
-        <img src="{{ url_for('static', filename='foto6.jpg') }}" />
+    <div class="audio-badge">
+      <button id="btnAudioToggle" title="Ligar ou desligar som">Som</button>
+      <span id="audioStatus">ligando...</span>
+    </div>
+  </div>
+
+  <!-- Modal de fotos -->
+  <div class="modal" id="modalFotos" role="dialog" aria-modal="true" aria-label="Fotos">
+    <div class="modal-card">
+      <button class="modal-fechar" id="btnFecharFotos" aria-label="Fechar">✕</button>
+      <div class="carrossel">
+        <div class="faixa">
+          <img src="{{ url_for('static', filename='foto1.jpg') }}" alt="foto 1" />
+          <img src="{{ url_for('static', filename='foto2.jpg') }}" alt="foto 2" />
+          <img src="{{ url_for('static', filename='foto3.jpg') }}" alt="foto 3" />
+          <img src="{{ url_for('static', filename='foto4.jpg') }}" alt="foto 4" />
+          <img src="{{ url_for('static', filename='foto5.jpg') }}" alt="foto 5" />
+          <img src="{{ url_for('static', filename='foto6.jpg') }}" alt="foto 6" />
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Áudio de fundo -->
+  <audio id="bgm" src="{{ url_for('static', filename='castle.mp3') }}" preload="auto" loop playsinline></audio>
+
+  <!-- Camadas visuais -->
+  <div class="fundo-estrelado" id="fundoEstrelado"></div>
+  <div class="fundo" id="fundo"></div>
+  <img src="{{ url_for('static', filename='sol.png') }}" alt="Astro" class="astro" id="astro" />
+  <div class="ceu" id="ceu"></div>
+  <div class="parallax" id="parallax"></div>
+  <img src="{{ url_for('static', filename='aviao.png') }}" alt="Avião voando" class="aviao" />
+
   <script>
-    const inicio = new Date('2025-05-24T19:35:00');
-    const elemento = document.getElementById('contador');
+    /* Início do namoro */
+    const inicioRelacao = new Date('2025-05-24T19:35:00');
 
-    function atualizarContador() {
-      const agora = new Date();
-      let anos = agora.getFullYear() - inicio.getFullYear();
-      let meses = agora.getMonth() - inicio.getMonth();
-      let dias = agora.getDate() - inicio.getDate();
-      let horas = agora.getHours() - inicio.getHours();
-      let minutos = agora.getMinutes() - inicio.getMinutes();
-      let segundos = agora.getSeconds() - inicio.getSeconds();
-
-      if (segundos < 0) { segundos += 60; minutos--; }
-      if (minutos < 0) { minutos += 60; horas--; }
-      if (horas < 0) { horas += 24; dias--; }
-      if (dias < 0) {
-        const mesAnterior = new Date(agora.getFullYear(), agora.getMonth(), 0);
-        dias += mesAnterior.getDate();
-        meses--;
-      }
-      if (meses < 0) { meses += 12; anos--; }
-
-      const texto = `${anos}a, ${meses}m, ${dias}d, ${horas}h ${minutos}min ${segundos}s`;
-      elemento.textContent = texto;
-    }
-
-    setInterval(atualizarContador, 1000);
-    atualizarContador();
-
-    let mostrado = false;
-    document.getElementById('ceu').addEventListener('click', () => {
-      if (mostrado) return;
-      mostrado = true;
-      document.getElementById('overlay').classList.add('ativo');
-      document.getElementById('mensagem').classList.add('ativa');
-    });
-
+    // Elementos
+    const fundo = document.getElementById('fundo');
+    const fundoEstrelado = document.getElementById('fundoEstrelado');
     const ceu = document.getElementById('ceu');
     const parallax = document.getElementById('parallax');
     const astro = document.getElementById('astro');
-    const btnEscuro = document.getElementById('btnModoEscuro');
-    const btnClaro = document.getElementById('btnModoClaro');
+    const tempoJuntosEl = document.getElementById('tempoJuntos');
 
-    btnEscuro.addEventListener('click', (e) => {
-      e.stopPropagation();
-      ceu.style.backgroundImage = 'url("{{ url_for('static', filename='ceu-escuro.png') }}")';
-      parallax.style.backgroundImage = 'url("{{ url_for('static', filename='parallax-escuro.png') }}")';
-      astro.src = "{{ url_for('static', filename='lua.png') }}";
-      btnEscuro.classList.add('hidden');
-      btnClaro.classList.remove('hidden');
+    // Modal
+    const modal = document.getElementById('modalFotos');
+    document.getElementById('btnVerFotos').addEventListener('click', () => modal.classList.add('ativo'));
+    document.getElementById('btnFecharFotos').addEventListener('click', () => modal.classList.remove('ativo'));
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('ativo'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.remove('ativo'); });
+
+    // Tempo utils
+    function minutosDoDia(d){ return d.getHours()*60 + d.getMinutes(); }
+    function estadoPorHora(d){
+      const m = minutosDoDia(d);
+      if (m >= 19*60 || m < 5*60) return 'noite';
+      if (m >= 5*60 && m < 7*60)  return 'amanhecer';
+      if (m >= 7*60 && m < 18*60) return 'dia';
+      return 'anoitecer';
+    }
+    function setBGImage(el, filename){ el.style.backgroundImage = `url("${filename}")`; }
+
+    function aplicarTema(d = new Date()) {
+      const estado = estadoPorHora(d);
+      if (estado === 'noite') {
+        setBGImage(fundo, "{{ url_for('static', filename='fundo-ceu-escuro.png') }}");
+        setBGImage(ceu,   "{{ url_for('static', filename='ceu-escuro.png') }}");
+        setBGImage(parallax, "{{ url_for('static', filename='parallax-escuro.png') }}");
+        astro.src = "{{ url_for('static', filename='lua.png') }}";
+        fundoEstrelado.style.display = 'block';
+      } else if (estado === 'amanhecer') {
+        setBGImage(fundo, "{{ url_for('static', filename='fundo-ceu-amanhecer.png') }}");
+        setBGImage(ceu,   "{{ url_for('static', filename='ceu-amanhecer.png') }}");
+        setBGImage(parallax, "{{ url_for('static', filename='parallax-amanhecer.png') }}");
+        astro.src = "{{ url_for('static', filename='sol.png') }}";
+        fundoEstrelado.style.display = 'none';
+      } else if (estado === 'dia') {
+        setBGImage(fundo, "{{ url_for('static', filename='fundo-ceu.png') }}");
+        setBGImage(ceu,   "{{ url_for('static', filename='ceu.png') }}");
+        setBGImage(parallax, "{{ url_for('static', filename='parallax.png') }}");
+        astro.src = "{{ url_for('static', filename='sol.png') }}";
+        fundoEstrelado.style.display = 'none';
+      } else {
+        setBGImage(fundo, "{{ url_for('static', filename='fundo-ceu-anoitecer.png') }}");
+        setBGImage(ceu,   "{{ url_for('static', filename='ceu-amanhecer-anoitecer.png') }}");
+        setBGImage(parallax, "{{ url_for('static', filename='parallax-anoitecer.png') }}");
+        astro.src = "{{ url_for('static', filename='sol.png') }}";
+        fundoEstrelado.style.display = 'none';
+      }
+      posicionarAstro(d, estado);
+    }
+
+    function posicionarAstro(d, estado){
+      const m = minutosDoDia(d);
+      const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+      const lerp  = (a,b,t)=>a+(b-a)*t;
+      const arc   = (t, minTop=15, maxTop=80) => maxTop - (maxTop-minTop)*Math.sin(Math.PI*t);
+      let topVH;
+      if (estado === 'dia'){
+        const start = 7*60, dur = 11*60; const t = clamp((m - start)/dur, 0, 1); topVH = arc(t, 15, 75);
+      } else if (estado === 'noite'){
+        let t; if (m >= 19*60) t = (m - 19*60)/600; else t = (m + (24*60 - 19*60))/600; t = clamp(t, 0, 1); topVH = arc(t, 20, 80);
+      } else if (estado === 'amanhecer'){
+        const start = 5*60, dur = 120; const t = clamp((m - start)/dur, 0, 1); topVH = lerp(85, 70, t);
+      } else {
+        const start = 18*60, dur = 60; const t = clamp((m - start)/dur, 0, 1); topVH = lerp(70, 85, t);
+      }
+      astro.style.top = `${topVH}vh`;
+    }
+
+    // Cronômetro
+    function atualizarTempoJuntos(){
+      const agora = new Date();
+      let anos = agora.getFullYear() - inicioRelacao.getFullYear();
+      let meses = agora.getMonth() - inicioRelacao.getMonth();
+      let dias = agora.getDate() - inicioRelacao.getDate();
+      let horas = agora.getHours() - inicioRelacao.getHours();
+      let minutos = agora.getMinutes() - inicioRelacao.getMinutes();
+      let segundos = agora.getSeconds() - inicioRelacao.getSeconds();
+      if (segundos < 0){ segundos += 60; minutos--; }
+      if (minutos < 0){ minutos += 60; horas--; }
+      if (horas < 0){ horas += 24; dias--; }
+      if (dias < 0){
+        const mesAnterior = new Date(agora.getFullYear(), agora.getMonth(), 0);
+        dias += mesAnterior.getDate(); meses--;
+      }
+      if (meses < 0){ meses += 12; anos--; }
+      tempoJuntosEl.textContent = `${anos}a, ${meses}m, ${dias}d, ${horas}h ${minutos}min ${segundos}s`;
+    }
+
+    // Responsivo
+    function applyResponsiveSizes(){
+      const landscape = window.matchMedia('(orientation: landscape)').matches;
+      const aviao = document.querySelector('.aviao');
+      if (landscape){ astro.style.width = '64px'; aviao.style.width = '120px'; }
+      else { astro.style.width = '100px'; aviao.style.width = '180px'; }
+    }
+
+    /* ===== Controle de hora: botão Agora + input que aplica automaticamente ===== */
+    const inputHora = document.getElementById('inputHora');
+    const btnAgora = document.getElementById('btnAgora');
+    let horaSimulada = null; // null = tempo real
+
+    function parseHoraInput(val){
+      if (!val) return null;
+      const s = val.trim();
+      const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (!m) return null;
+      const H = parseInt(m[1],10), M = parseInt(m[2],10), S = m[3] ? parseInt(m[3],10) : 0;
+      if (H<0 || H>23 || M<0 || M>59 || S<0 || S>59) return null;
+      const base = new Date(); base.setHours(H, M, S, 0); return base;
+    }
+
+    function tick(){ const d = horaSimulada || new Date(); aplicarTema(d); }
+
+    // Ao digitar, aplica automaticamente (se válido)
+    inputHora.addEventListener('input', () => {
+      const d = parseHoraInput(inputHora.value);
+      if (d){ horaSimulada = d; tick(); }
     });
 
-    btnClaro.addEventListener('click', (e) => {
-      e.stopPropagation();
-      ceu.style.backgroundImage = 'url("{{ url_for('static', filename='ceu.png') }}")';
-      parallax.style.backgroundImage = 'url("{{ url_for('static', filename='parallax.png') }}")';
-      astro.src = "{{ url_for('static', filename='sol.png') }}";
-      btnClaro.classList.add('hidden');
-      btnEscuro.classList.remove('hidden');
+    // Botão AGORA: volta pro tempo real (atualiza a cada minuto)
+    btnAgora.addEventListener('click', () => {
+      horaSimulada = null;
+      tick();
     });
+
+    setInterval(() => { if (!horaSimulada) tick(); }, 60*1000); // atualiza a cada minuto no modo real
+
+    /* ===== Áudio ===== */
+    const bgm = document.getElementById('bgm');
+    const btnAudioToggle = document.getElementById('btnAudioToggle');
+    const audioStatus = document.getElementById('audioStatus');
+    const desiredVolume = 0.6;
+
+    function updateAudioBadge(){
+      if (!bgm.paused && !bgm.muted && bgm.volume > 0){ audioStatus.textContent = 'tocando'; btnAudioToggle.textContent = 'Pausar'; }
+      else if (!bgm.paused && bgm.muted){ audioStatus.textContent = 'mudo'; btnAudioToggle.textContent = 'Ativar'; }
+      else { audioStatus.textContent = 'pausado'; btnAudioToggle.textContent = 'Tocar'; }
+    }
+    async function tryEnableSound(forceUnmute=false){
+      try { if (forceUnmute) bgm.muted = false; bgm.volume = desiredVolume; await bgm.play(); updateAudioBadge(); return; }
+      catch(e1){ try { bgm.muted = true; await bgm.play(); updateAudioBadge(); } catch(e2){ updateAudioBadge(); } }
+    }
+    function unlockOnFirstGesture(){
+      const h = () => { bgm.muted = false; bgm.volume = desiredVolume; bgm.play().finally(updateAudioBadge);
+        window.removeEventListener('pointerdown', h); document.removeEventListener('keydown', h); };
+      window.addEventListener('pointerdown', h, { once: true }); document.addEventListener('keydown', h, { once: true });
+    }
+    btnAudioToggle.addEventListener('click', () => {
+      if (bgm.paused){ tryEnableSound(true); }
+      else {
+        if (bgm.muted || bgm.volume === 0){ bgm.muted = false; bgm.volume = desiredVolume; bgm.play().finally(updateAudioBadge); }
+        else { bgm.pause(); updateAudioBadge(); }
+      }
+    });
+
+    // Inicialização
+    applyResponsiveSizes();
+    tick();
+    atualizarTempoJuntos();
+    setInterval(atualizarTempoJuntos, 1000);
+    window.addEventListener('resize', applyResponsiveSizes);
+    window.addEventListener('orientationchange', applyResponsiveSizes);
+    tryEnableSound(); unlockOnFirstGesture();
   </script>
 </body>
 </html>
